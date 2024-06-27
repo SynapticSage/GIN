@@ -152,6 +152,18 @@ def plot_molecules_with_highlighted_features(smiles_list,
             plt.axis('off')
             plt.show()
 
+def featurize_smiles(smiles_str: str,
+                     method: str = 'combined') -> np.ndarray:
+  """Convert a molecule SMILES into a 1D feature vector."""
+  if method == 'morgan':
+    fingerprint = tonic.features.get_morgan_fingerprint(smiles_str)
+  elif method == 'maccs':
+    fingerprint = tonic.features.get_maccs_keys_fingerprint(smiles_str)
+  elif method == 'combined':
+    fingerprint = tonic.features.get_combined_fingerprint(smiles_str)
+  else:
+    raise ValueError(f"Invalid method: {method}")
+  return fingerprint
 
 # Example usage
 if __name__ == "__main__":
