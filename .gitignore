@@ -1,6 +1,6 @@
-data/
 env
 dream_olfaction.egg-info
 test/__pycache__
 tonic/__pycache__
 tonic/extra/__pycache__
+data
