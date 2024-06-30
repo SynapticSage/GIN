@@ -6,3 +6,5 @@ tonic/extra/__pycache__
 data
 *.ai
 *.webp
+gin/__pycache__
+gin/extra/__pycache__

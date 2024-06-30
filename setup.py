@@ -6,7 +6,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name='tonic',  # The name of your package
+    name='gin',  # The name of your package
     version='0.1.0',  # The initial release version
     packages=find_packages(),  # Automatically find packages in your project
     include_package_data=True,  # Include other files listed in MANIFEST.in

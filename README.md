@@ -1,4 +1,10 @@
-# Tonic
+<p float="right">
+  <img src="assets/icon.png" alt="Image Description" width="200">
+</p>
+
+<h1 float="left">
+Gin
+</h1>
 
 This repository contains code for exploring and analyzing data for the DREAM Olfaction Challenge as well as Pyrfume odorant data. 
 
@@ -6,24 +12,26 @@ The goal of the challenge is to
 - develop models that can predict how close two mixtures of molecules are in the odor perceptual space using physical and chemical featuress
 - or single odorant for certain Pyrfume data.
 
-## Pyrfume
+## Data
+
+### Pyrfume
 The data is managed by the [Pyrfume project](https://pyrfume.org/), containing SMILES strings representing molecular structures and their corresponding binary labels.
 
-## DREAM Challenge Data
+### DREAM Challenge Data
 Below, providing an abbreviated challenge description from [Synapse website](https://www.synapse.org/#!Synapse:syn53470621/wiki/627282):
 
 ```markdown
-### Background
+#### Background
 
 Olfaction—the sense of smell—is the least understood of our senses. We use it constantly in our daily lives—choosing food that is not spoiled, as an early-warning sign of a gas leak or a fire, and in the enjoyment of perfume and wine. Recent advances have helped predict what a molecule will smell like, given its chemical structure. This is known as the stimulus-percept problem, which was solved long ago for color vision and tone hearing.
 
 For this challenge, we are providing a large published training set of 500 mixtures measurements obtained from 3 publications, and an unpublished test set of 46 equi-intense mixtures of 10 molecules whose distance was rated by 35 human subjects.
 
-### Task
+#### Task
 
 The goal of the DREAM Olfaction Challenge is to find models that can predict how close two mixtures of molecules are in the odor perceptual space (on a 0-1 scale, where 0 is total overlap and 1 is the furthest away) using physical and chemical features.
 
-### Data Files
+#### Data Files
 
 - `Dragon_Descriptors.csv`: Provides the physico-chemical Dragon features for all molecules in the training, leaderboard, and test sets, plus extra molecules if needed.
 - `Mordred_Descriptors.csv`: Provides the physico-chemical Mordred features for all molecules in the training, leaderboard, and test sets.
@@ -36,12 +44,35 @@ The goal of the DREAM Olfaction Challenge is to find models that can predict how
 - `Test_set_Submission_form.csv`: Contains pairs of mixtures for the test set and a column for your prediction.
 ```
 
+```mermaid
+graph LR
+    %% style %%
+    classDef fix line-height:30px
+
+    A[Dragon_Descriptors.csv<br>Provides physico-chemical Dragon features for molecules<br>-]:::fix --> G[Molecules<br>-]
+    B[Mordred_Descriptors.csv\nProvides physico-chemical Mordred features for molecules<br>-]:::fix --> G[Molecules<br>-]
+    C[Morgan_Fingerprint.csv\nProvides physico-chemical Morgan fingerprints for molecules<br>-] --> G[Molecules<br>-]
+    D[Mixure_Definitions_Training_set.csv\nIndicates composition of mixtures in the training set<br>-] --> E[Training Set<br>-]
+    F[TrainingData_mixturedist.csv\nContains distance measurements between pairs of mixtures in the training set<br>-] --> E[Training Set<br>-]
+    H[Mixure_Definitions_Leaderboard_set.csv\nIndicates composition of mixtures in the leaderboard set<br>-] --> I[Leaderboard Set<br>-]
+    J[Leaderboard_set_Submission_form.csv\nContains pairs of mixtures for the leaderboard set and a column for predictions<br> -] --> I[Leaderboard Set<br>-]
+    K[Mixure_Definitions_test_set.csv\nIndicates composition of mixtures in the test set<br>-] --> L[Test Set<br>-]:::fix
+    M[Test_set_Submission_form.csv\nContains pairs of mixtures for the test set and a column for predictions<br> - ] --> L[Test Set<br>-]:::fix
+    
+    G --> |Included in| D
+    G --> |Included in| H
+    G --> |Included in| K
+    E --> |Used to train models| I
+    I --> |Used to validate models| L
+```
+
 ## Installation
 
 To install the package, run:
 
 ```bash
 pip install -e .
+```
 
 ## Project Structure
 
