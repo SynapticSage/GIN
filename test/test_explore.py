@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from tonic import explore
+from gin import explore
 import matplotlib
 
 # set plot visible to false

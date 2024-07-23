@@ -3,9 +3,11 @@ dream_olfaction.egg-info
 test/__pycache__
 tonic/__pycache__
 tonic/extra/__pycache__
-data
+/data/
 *.ai
 *.webp
 gin/__pycache__
 gin/extra/__pycache__
 gin.egg-info
+.DS_Store
+.aid*

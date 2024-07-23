@@ -124,10 +124,10 @@ def train_gnn_model(data_list, num_epochs=100, batch_size=1024, learning_rate=0.
     return model
 
 if __name__ == "__main__":
-    import tonic
+    import gin
     import numpy as np
-    from tonic.data import read_local_csv
-    from tonic.extra.features import smiles_to_graph
+    from gin.data import read_local_csv
+    from gin.extra.features import smiles_to_graph
     
     # Read the CSV data
     data_df = read_local_csv()
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             data.y = torch.tensor([floral], dtype=torch.float)  # Assign target value
             data_list.append(data)
 
-    tonic.extra.features.normalize_data_list(data_list)
+    gin.extra.features.normalize_data_list(data_list)
     
     if len(data_list) == 0:
         raise ValueError("No valid graph data could be generated from the provided SMILES strings.")
@@ -177,16 +177,16 @@ if __name__ == "__main__":
     # Evaluate performance
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
-    tonic.validate.evaluate_model(all_labels, all_preds > 0.5)
+    gin.validate.evaluate_model(all_labels, all_preds > 0.5)
 
-    from tonic.extra.validate import evaluate_thresholds_gnn
+    from gin.extra.validate import evaluate_thresholds_gnn
     thresholds = np.arange(0.0,1.0,0.01)
     results = evaluate_thresholds_gnn(model, data_list, thresholds)
     print(results)
 
-    tonic.validate.plot_threshold_results(results, model_name="GNN")
+    gin.validate.plot_threshold_results(results, model_name="GNN")
     plt.savefig('threshold_results.png')
 
     optimal_threshold = thresholds[np.argmax(results['F1'])]
-    tonic.validate.plot_confusion_matrix(all_labels, all_preds > optimal_threshold, suptitle='GNN Model')
+    gin.validate.plot_confusion_matrix(all_labels, all_preds > optimal_threshold, suptitle='GNN Model')
     plt.savefig('confusion_matrix.png')

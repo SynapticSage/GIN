@@ -25,7 +25,8 @@ setup(
         'torch_geometric',
         'tensorboard',
         #'torch_scatter',
-        'scikit-learn==1.2.2',
+        # 'scikit-learn==1.2.2',
+        'scikit-learn',
         'imbalanced-learn', 
         # Conversion dependencies
         'jupytext', # for conversion from .py to .ipynb
