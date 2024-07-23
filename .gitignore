@@ -8,3 +8,4 @@ data
 *.webp
 gin/__pycache__
 gin/extra/__pycache__
+gin.egg-info
