@@ -5,6 +5,8 @@ from rdkit.Chem import AllChem
 from rdkit.Chem import MACCSkeys
 from rdkit.Chem.AllChem import RDKFingerprint
 from rdkit.Chem import Draw
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+
 # from rdkit.Chem import rdmolops
 
 import matplotlib
@@ -23,7 +25,11 @@ def get_morgan_fingerprint(smiles_str: str, radius: int = 2,
     mol = Chem.MolFromSmiles(smiles_str)
     if mol is None:
         raise ValueError(f"Invalid SMILES string: {smiles_str}")
-    fingerprint = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
+    gen = GetMorganGenerator(radius=int(radius), fpSize=int(n_bits))
+    fingerprint = gen.GetFingerprint(mol)
+
+    
+
     if output == 'array':
         fingerprint = np.array(fingerprint)
     DEFAULT_MORGAN_BITS = n_bits # Update the default number of bits
@@ -46,7 +52,8 @@ def get_combined_fingerprint(smiles_str: str, radius: int = 2, n_bits: int = 102
         raise ValueError(f"Invalid SMILES string: {smiles_str}")
     
     # Generate Morgan fingerprint
-    morgan_fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
+    gen = GetMorganGenerator(radius=int(radius), fpSize=int(n_bits))
+    morgan_fp = gen.GetFingerprint(mol)
     morgan_fp = np.array(morgan_fp)
     
     # Generate MACCS keys fingerprint
@@ -116,7 +123,6 @@ def highlight_features_on_molecule(smiles, top_features,
         if bit < morgan_len:
             if combined_fp[bit]:
                 info = {}
-                AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=morgan_len, bitInfo=info)
                 if bit in info:
                     for atom_idx, radius in info[bit]:
                         env = Chem.FindAtomEnvironmentOfRadiusN(mol, radius, atom_idx)
@@ -168,7 +174,7 @@ def featurize_smiles(smiles_str: str,
 # Example usage
 if __name__ == "__main__":
     from matplotlib import pyplot as plt
-    from tonic.features import get_morgan_fingerprint, get_maccs_keys_fingerprint, get_combined_fingerprint
+    from gin.features import get_morgan_fingerprint, get_maccs_keys_fingerprint, get_combined_fingerprint
 
     smiles = 'CCO'
     print("Morgan Fingerprint:", get_morgan_fingerprint(smiles))
