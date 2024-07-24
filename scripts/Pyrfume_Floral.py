@@ -5,11 +5,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.16.2
+#       jupytext_version: 1.16.3
 #   kernelspec:
-#     display_name: Analysis Notebook
+#     display_name: GIN
 #     language: python
-#     name: analysis
+#     name: in
 # ---
 
 # + [markdown] id="LGz0DB7-1f0c"
@@ -29,11 +29,7 @@
 
 # + [markdown] id="dtaFLFKizYVN"
 # # Dependencies
-#
-# We will use various packages that are useful for this analysis. You can import additional libraries as needed.
-
-# + [markdown] id="4fa42d51-3475-485c-bf00-4b115cf34e3b"
-# Ryan: The following cell clones a private GitHub repo called `gin`
+# The following cell clones a private GitHub repo called `gin`
 #  -- where I developed the code for this analysis.
 #
 # Even with notebooks, I tend to modularize pieces into repos for
@@ -42,22 +38,31 @@
 # - testing
 #
 # The "fine-grained" `access_token` token below grants permission to pull the private repo.
+# -
+
+
 
 # + colab={"base_uri": "https://localhost:8080/"} id="030e98c5-f7f4-4811-98a0-fc97b9cc0ce3" outputId="c5032aab-8eeb-422a-e2cf-f23660c85260"
+import importlib
 import os
+import shutil
+
+# Check if the `gin` package is installed
+module_spec = importlib.util.find_spec('gin')
+module_spec
+
+# Check if the `gin` package is installed, if refresh is True, then we will refresh the package
 refresh = False
-if os.path.isdir('gin') and refresh:
-  os.system('rm -rf gin')
-if not os.path.isdir('gin'):
-  # NOTE: This is an access token fenced-off for this specific private repository - only usable to clone this single private repo.
-  repo_url = f'https://github.com/synapticsage/gin.git'
-  os.system(f'git clone {repo_url}')
-# Move to the repository
-  os.chdir('gin')
-  # !echo "Current direc" `pwd`
-  # pip install the package
-  # !pip install .
-  os.chdir('..')
+if module_spec and refresh:
+    shutil.rmtree(folder)
+    gin_path = os.path.dirname(module_spec.locations)
+    # NOTE: This is an access token fenced-off for this specific private repository - only usable to clone this single private repo.
+    repo_url = f'https://github.com/synapticsage/gin.git'
+    os.system(f'git clone {repo_url}')
+    os.chdir('gin')
+    # # !pip install . 
+    # pip install the package
+    # os.chdir('..')
 
 # + id="fa70a528-888d-41b6-af4a-b8f0b1f2206e"
 # %matplotlib inline
@@ -71,7 +76,7 @@ from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 plt.rcParams['figure.dpi'] = 150
 
 # + [markdown] id="d538e6fc"
@@ -154,15 +159,15 @@ y = data_df['floral'].values
 gin.explore.pyrfume.plot_feature_heatmap(x)
 
 # + [markdown] id="604a9a65"
-# Are there other things we need to do with the data?
+# Having noticed the above, we should maybe be thinking about the following
 #
-# **Ryan:** Some things to consider:
 # - Feature scaling - less necessary for tree-based models
 # - High class cardinality - hopefully not an issue
 # - Feature imbalance - this is a possible issue, but we can address this
 #   - SMOTE is an option for increasing the minority class
 #
-# Regardless, we have to split the data into training and testing sets.
+# ## Splitting the data, cross-validation
+# we have to split the data into training and testing sets.
 
 # + id="72be4cf4"
 X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
@@ -173,7 +178,7 @@ X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 X_test_res, y_test_res = smote.fit_resample(X_test, y_test)
 
 # + [markdown] id="6b56123a"
-# # Train and evaluate a random forest (RF) model
+# ## Train and evaluate a random forest (RF) model
 #
 # We will use the RF implementation from [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html).
 
@@ -193,8 +198,11 @@ rf_y_pred_res2uns = model_res.predict(X_test)
 # And out of curiosity, let's also try an ensemble - even though for production-level models, this is likely overkill. A tiny performance boost often isn't worth the time and complexity.
 
 # + [markdown] id="56d7f4dd"
+# ## Scoring / Evaluation 📝
+#
 # How do we evaluate the model performance? What metrics are relevant here?
-# Ryan: This is binary classification - we care about precision, recall, F1, and AUC-ROC.
+#
+# This is binary classification - we care about precision, recall, F1, and AUC-ROC.
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 766} id="19f90c57" outputId="addce402-1aed-4959-96de-9632e7cb2a35"
 # What sort of visualization is needed here?
@@ -214,24 +222,27 @@ gin.validate.evaluate_model(y_test, rf_y_pred_res2uns)
 gin.validate.plot_confusion_matrix(y_test, rf_y_pred_res2uns, suptitle=suptitle)
 
 # + colab={"base_uri": "https://localhost:8080/"} id="a4f07b95" outputId="e4411c03-a672-463b-f072-9152bb24142a"
-from sklearn.ensemble import VotingClassifier
+start_time = time.time()
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingClassifier
-clf1 = LogisticRegression()
-clf2 = RandomForestClassifier(**best_params)
-clf3 = GradientBoostingClassifier()
+clf1 = LogisticRegression(max_iter=1000)
+clf2 = sklearn_ensemble.RandomForestClassifier(**best_params)
+clf3 = sklearn_ensemble.GradientBoostingClassifier()
 
 # VotingClassifier with hard voting
-model_vote = VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
-model_vote_res = VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
+model_vote = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
+model_vote_res = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
 
 # Fit and predict
+print("Fitting vote model")
 model_vote.fit(X_train, y_train)
 eclf_y_pred = model_vote.predict(X_test)
 
+print("Fitting the res vote model")
 model_vote_res.fit(X_train_res, y_train_res)
 eclf_y_pred_res = model_vote_res.predict(X_test_res)
 eclf_y_pred_res2uns = model_vote_res.predict(X_test)
+
+print("Time taken: ", time.time() - start_time)
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 766} id="793c8713" outputId="66382dad-b565-4fb2-8b58-d6ae96a957e2"
 print("----------------")
@@ -250,11 +261,9 @@ gin.validate.evaluate_model(y_test, eclf_y_pred_res2uns)
 gin.validate.plot_confusion_matrix(y_test, eclf_y_pred_res2uns, suptitle=suptitle)
 
 # + [markdown] id="4c7cf486"
-# Would 0.5 work as a selection threshold? If not, why? And how do we pick a selection threshold?
+# By default random forest sets a default, but perhaps that's not ideal. We have a great deal of choice for type I type II error, and situationally these change.
 #
-# **Ryan:**
-# - The default works well if we resolve class imbalance.
-# - But we can also try to improve by tuning the threshold, and examining the ROC curve. Let's try it.
+# So let's examine how everything changes as a function of threshold.
 #
 # > Note: for hyperparameter tuning, usually we want a train, test, and validation set. But since it already works well above with SMOTE, I'm going to forgo a validation set for this exercise 😈.
 
@@ -277,7 +286,8 @@ gin.validate.plot_threshold_results(results_df, model_name='Random Forest', supt
 # Generally, we should pick a threshold somewhere in the goldilocks zone (shown in gray above).
 
 # + [markdown] id="b043bdab"
-# # Train a simple neural network.
+# # Multi-layer Perceptron 
+# Let's traina simple neural network.
 #
 # Now that we have tried modeling with an RF, let's try modeling with a simple neural network: the [multilayer perceptron](https://en.wikipedia.org/wiki/Multilayer_perceptron).
 #
@@ -285,81 +295,11 @@ gin.validate.plot_threshold_results(results_df, model_name='Random Forest', supt
 #
 # ## Build the MLP module and model API
 
-# + id="a5f3c294"
-class MLPModule(torch.nn.Module):
-  def __init__(self,
-               input_dim: int | np.ndarray = 2048,
-               hidden_dim: int = 128):
-    super().__init__()
-    if isinstance(input_dim, np.ndarray):
-      input_dim = input_dim.shape[-1]
-    self.input_dim = input_dim
-    self.hidden_dim = hidden_dim
-    self.model = self._create_model()
-
-  def _create_model(self) -> torch.nn.Module:
-    """Create a three layer MLP producing a prediction tensor [n_samples, 1]."""
-    return torch.nn.Sequential(
-        torch.nn.Linear(self.input_dim, self.hidden_dim),
-        torch.nn.ReLU(),
-        torch.nn.Linear(self.hidden_dim, self.hidden_dim),
-        torch.nn.ReLU(),
-        torch.nn.Linear(self.hidden_dim, 1),
-        torch.nn.Sigmoid()
-    )
-
-  def forward(self, x: torch.Tensor) -> torch.Tensor:
-    return torch.squeeze(self.model(x), dim=-1)
-
-class MLP:
-  def __init__(self, input_dim: int = 2048):
-    self.net = MLPModule(input_dim)
-    self.optimizer = self._get_optimizer()
-    self.criterion = self._get_criterion()
-
-  def _get_optimizer(self) -> torch.optim.Optimizer:
-    """Setup a PyTorch optimizer."""
-    return torch.optim.Adam(self.net.parameters(), lr=1e-3)
-
-  def _get_criterion(self) -> torch.nn.Module:
-    """Setup a loss function."""
-    return torch.nn.BCELoss()
-
-  def _train_one_epoch(self, dataloader: torch.utils.data.DataLoader) -> torch.Tensor:
-    """Train one epoch with data loader and return the average train loss.
-
-      Please make use of the following initialized items:
-      - self.net
-      - self.optimizer
-      - self.criterion
-
-    """
-    self.net.train()
-    total_loss = 0.0
-    for batch_x, batch_y in dataloader:
-        self.optimizer.zero_grad()
-        predictions = self.net(batch_x)
-        loss = self.criterion(predictions, batch_y)
-        loss.backward()
-        self.optimizer.step()
-        total_loss += loss.item()
-    return total_loss / len(dataloader)
-
-  def fit(self, x: np.ndarray, y: np.ndarray, num_epoch: int = 200, batch_size: int = 256):
-    from tqdm.auto import tqdm
-    dataset = torch.utils.data.TensorDataset(torch.Tensor(x), torch.Tensor(y))
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    for _ in tqdm(range(num_epoch), desc='Epochs', total=num_epoch):
-      loss = self._train_one_epoch(dataloader)
-
-  def predict(self, x: np.ndarray):
-    self.net.eval()
-    return self.net(torch.Tensor(x)).detach().cpu().numpy()
-
 # + [markdown] id="7af0283b"
 # ## Setup a simple data loader and train the model
 
 # + colab={"base_uri": "https://localhost:8080/", "referenced_widgets": ["6d0890f44e814206bd30c60201f45332", "a0475cc35b8b407e8a942e3fbd35cfc4", "edc52d907cda4314b9ac9460a872695d", "1f4281bceda244acb2a23c4cea260031", "84eee56305d74f52ad64ec48c5069cc6", "09f05218359641219abbc8361ccbddb0", "990c50f9973746638302901163199cba", "87ea4a0a693248218bce9a33d9030e5c", "688738e111ea43cb9cc0204e2a507b5f", "cd518f62f2764893b3c59b5ac4f69956", "3f5e690936784b86909fd851156c96fc", "788cc0bc124d42aeb7edf793a1f89673", "c31cb31f9d5e4a80a911594fa205eeb4", "0c1522e6c36041dda0bf29797885828e", "66d15d87fd9940af84329d9aef29b163", "7302c3f754f145e5bb5769198f776b29", "c1385ef173004e369c46d1e547e92cf1", "7f287cf51cc24b60ac6aca67bd509490", "b1bfc77433c044cd879ec167309e8d3c", "9d21d4e393284d6aa0cc80d4b0f25bbf", "5dae1ccc76fb4370976e37a003a42b9b", "d7d18611bb8c4eda89b9e8925d302575"]} id="71afc38b" outputId="dfcb4c9c-ea77-4064-a789-f98d40e8a569"
+from gin.model import MLP
 model = MLP(input_dim=X_train.shape[1])
 model.fit(X_train, y_train)
 
@@ -421,14 +361,12 @@ gin.validate.plot_threshold_results(results_df_mlp_res, model_name='MLP - Resamp
 #
 # Notably, the resampled model for the `MLP` does **not** perform any better, unlike the `RandomForest` above. In practice, we could try other methods of rebalancing and data augmentation techniques given sparse samples.
 #
-# # Naive (👶) GNN Extra
+# # Graph Neural Network, Bonus - Naive (👶) 
 #
 # For fun, let's dovetail this section with a very naive message-passing GNN approach  🤖
 #
-# (however far I can get in 45 minutes or so)
-#
-# *NOTES*  📝
-# - Doing this without resampling/data-augmentation -- so may not approach performance above.
+# *NOTES OF INTEREST*  📝
+# - We are doing this without resampling/data-augmentation -- so we _may not approach_ performance above.
 # - Instead, using a simpler class-imbalance reweighting function in the cross-entropy objective.
 # - We may not have enough samples to utilize the capacity of a bigger model.
 
