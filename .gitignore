@@ -12,3 +12,5 @@ gin.egg-info
 .DS_Store
 .aid*
 __pycache__
+notebook/.ipynb_checkpoints
+*.bak*

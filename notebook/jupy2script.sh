@@ -22,5 +22,6 @@ else
   echo "Conversion failed. Please check the notebook file and try again."
 fi
 
-cp ../scripts/$output_file ../scripts/${output_file}.bak.$(date +%Y%m%d%H%M%S)
+echo "cp ../scripts/$output_file ../scripts/${output_file}.bak.$(date +%Y%m%d%H%M%S)"
+cp "../scripts/$output_file" "../scripts/${output_file}.bak.$(date +%Y%m%d%H%M%S)"
 mv $output_file ../scripts/
