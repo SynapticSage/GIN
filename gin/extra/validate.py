@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
-from tonic.validate import plot_threshold_results  # Assuming this is where the function is located
+from gin.validate import plot_threshold_results  # Assuming this is where the function is located
 from torch_geometric.data import DataLoader
 import pandas as pd
 

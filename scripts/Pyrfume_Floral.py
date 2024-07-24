@@ -38,10 +38,6 @@
 # - testing
 #
 # The "fine-grained" `access_token` token below grants permission to pull the private repo.
-# -
-
-
-
 # + colab={"base_uri": "https://localhost:8080/"} id="030e98c5-f7f4-4811-98a0-fc97b9cc0ce3" outputId="c5032aab-8eeb-422a-e2cf-f23660c85260"
 import importlib
 import os
@@ -55,7 +51,7 @@ module_spec
 refresh = False
 if module_spec and refresh:
     shutil.rmtree(folder)
-    gin_path = os.path.dirname(module_spec.locations)
+    gin_path = os.path.dirname(module_spec.origin)
     # NOTE: This is an access token fenced-off for this specific private repository - only usable to clone this single private repo.
     repo_url = f'https://github.com/synapticsage/gin.git'
     os.system(f'git clone {repo_url}')
@@ -63,6 +59,10 @@ if module_spec and refresh:
     # # !pip install . 
     # pip install the package
     # os.chdir('..')
+# -
+
+os.chdir(os.path.dirname(os.path.dirname(module_spec.origin)))
+os.getcwd()
 
 # + id="fa70a528-888d-41b6-af4a-b8f0b1f2206e"
 # %matplotlib inline
@@ -449,6 +449,6 @@ gin.validate.plot_threshold_results(results, model_name="GNN")
 #
 # The GNN model, while an interesting exercise, does not perform as well as the simpler models. This is typical for neural networks with smaller datasets.
 #
-# <h4> Better yet -- pull a model from huggingface that has been pre-trained on other molecules to leverage the knowledge seen in other data.</h4>
+# <h4> Better yet -- pull a model from HuggingFace 🤗  that has been pre-trained on other molecules to leverage the knowledge seen in other data.</h4>
 #
 # # The End

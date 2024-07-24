@@ -76,7 +76,7 @@ pip install -e .
 
 ## Project Structure
 
-- `tonic/`
+- `gin/`
   - `data.py`: Contains functions to read and download data.
   - `explore.py`: Contains functions to visualize data.
   - `features.py`: Contains functions to generate molecular features.
@@ -89,7 +89,7 @@ pip install -e .
 
 ### Data Loading and Preprocessing
 
-Data is loaded using the `read_local_csv` function from `tonic.data`. Molecular fingerprints are generated using `featurize_smiles` from `tonic.features`.
+Data is loaded using the `read_local_csv` function from `gin.data`. Molecular fingerprints are generated using `featurize_smiles` from `gin.features`.
 
 ### Random Forest Model
 
@@ -100,9 +100,9 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
-from tonic.data import read_local_csv
-from tonic.features import featurize_smiles
-from tonic.validate import evaluate_model, plot_confusion_matrix
+from gin.data import read_local_csv
+from gin.features import featurize_smiles
+from gin.validate import evaluate_model, plot_confusion_matrix
 
 # Read the CSV data
 data_df = read_local_csv()
@@ -136,10 +136,10 @@ plot_confusion_matrix(y_test, rf_y_pred)
 ```python
 import torch
 from torch_geometric.data import DataLoader
-from tonic.data import read_local_csv
-from tonic.features import smiles_to_graph
-from tonic.extra.gnn import train_gnn_model
-from tonic.extra.features import normalize_data_list
+from gin.data import read_local_csv
+from gin.features import smiles_to_graph
+from gin.extra.gnn import train_gnn_model
+from gin.extra.features import normalize_data_list
 
 # Read the CSV data
 data_df = read_local_csv()
@@ -169,7 +169,7 @@ Monitor training with `tensorboard --logdir=./runs`
 #### Evaluation
 
 ```python
-from tonic.validate import evaluate_model, plot_confusion_matrix
+from gin.validate import evaluate_model, plot_confusion_matrix
 
 model.eval()
 test_loader = DataLoader(test_data, batch_size=256, shuffle=False)

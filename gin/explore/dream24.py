@@ -2,7 +2,7 @@
 # import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from load import (
+from gin.data.dream24 import (
     load_dragon_descriptors,
     load_mixure_definitions_test_set,
     load_leaderboard_set_submission_form,

@@ -31,8 +31,8 @@ def read_remote_csv(url: str=DATA_URL) -> pd.DataFrame:
     return pd.read_csv(url).set_index('IsomericSMILES')[['floral']]
 
 if __name__ == "__main__":
-    from tonic.data import read_local_csv
-    from tonic.extra.features import smiles_to_graph
+    from gin.data import read_local_csv
+    from gin.extra.features import smiles_to_graph
     
     # Read the CSV data
     data_df = read_local_csv()
