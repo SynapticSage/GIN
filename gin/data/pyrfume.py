@@ -10,12 +10,33 @@ pyrfume.set_data_path(os.getenv("PYRFUME_DATA"))
 REMOTE_URL = "https://raw.githubusercontent.com/pyrfume/pyrfume-data/main"
 LOCAL_PATH = get_data_path()
 
+def swap_shortcut_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename columns using shortcut names.
+
+    Args:
+        df (pd.DataFrame): DataFrame with columns to rename.
+
+    Returns:
+        pd.DataFrame: DataFrame with renamed columns.
+    """
+    _shortcut_names = {
+        "MolecularWeight": "MW",
+        "IsomericSMILES": "SMILES",
+        "IUPACName": "IUPAC",
+    }
+    # Create the renaming dictionary with existing column names as keys
+    renaming_dict = {
+        col: _shortcut_names.get(col, col) for col in df.columns
+    }
+    df = df.rename(columns=renaming_dict)
+    return df
 
 def get_behavior_dataframe(archive_name: str,
                           descriptor: str = "",
                           remote: bool = False,
                           url: str = REMOTE_URL,
-                          local_path: str = LOCAL_PATH):
+                          local_path: str = LOCAL_PATH,
+                          shortcut_names=True):
     """
     Fetches a DataFrame of Stimulus IDs in the presence/absence/intensity/etc
     of a specified descriptor.
@@ -39,6 +60,8 @@ def get_behavior_dataframe(archive_name: str,
         # Construct local path
         file_path = os.path.join(archive_name, "behavior.csv")
         df = load_data(file_path)
+    if shortcut_names:
+        df = swap_shortcut_names(df)
 
     return df
 
@@ -46,7 +69,8 @@ def get_behavior_dataframe(archive_name: str,
 def get_stimuli_dataframe(archive_name: str,
                           remote: bool = False,
                           url: str = REMOTE_URL,
-                          local_path: str = LOCAL_PATH):
+                          local_path: str = LOCAL_PATH,
+                          shortcut_names=True):
     """
     Fetches a DataFrame of Stimulus IDs and their corresponding CIDs.
 
@@ -68,6 +92,8 @@ def get_stimuli_dataframe(archive_name: str,
         # Construct local path
         file_path = os.path.join(archive_name, "stimuli.csv")
         df = load_data(file_path)
+    if shortcut_names:
+        df = swap_shortcut_names(df)
 
     return df
 
@@ -75,7 +101,8 @@ def get_stimuli_dataframe(archive_name: str,
 def get_molecules_dataframe(archive_name: str,
                             remote: bool = False,
                             url: str = REMOTE_URL,
-                            local_path: str = LOCAL_PATH):
+                            local_path: str = LOCAL_PATH,
+                            shortcut_names=True):
     """
     Fetches a DataFrame of Molecule information (CID, SMILES, etc.).
 
@@ -97,6 +124,8 @@ def get_molecules_dataframe(archive_name: str,
         # Construct local path
         file_path = os.path.join(archive_name, "molecules.csv")
         df = load_data(file_path)
+    if shortcut_names:
+        df = swap_shortcut_names(df)
 
     return df
 
@@ -106,7 +135,8 @@ def load(archive_name: str,
          descriptor: str = "",
          remote: bool = False,
          url: str = REMOTE_URL,
-         local_path: str = LOCAL_PATH):
+         local_path: str = LOCAL_PATH,
+         shortcut_names:bool=True):
     """
     Loads data from a specified Pyrfume-Data archive.
 
@@ -128,17 +158,22 @@ def load(archive_name: str,
     dataframes = {}
 
     if "behavior" in types:
-        dataframes["behavior"] = get_behavior_dataframe(
-            archive_name, descriptor, remote, url, local_path
-        )
+        dataframes["behavior"] = get_behavior_dataframe( archive_name,
+                                                        descriptor, remote,
+                                                        url, local_path,
+                                                        shortcut_names)
     if "stimuli" in types:
-        dataframes["stimuli"] = get_stimuli_dataframe(archive_name, remote, url, local_path)
+        dataframes["stimuli"] = get_stimuli_dataframe(archive_name, remote,
+                                                      url, local_path,
+                                                      shortcut_names)
     if "molecules" in types:
-        dataframes["molecules"] = get_molecules_dataframe(archive_name, remote, url, local_path)
+        dataframes["molecules"] = get_molecules_dataframe(archive_name, remote,
+                                                          url, local_path,
+                                                          shortcut_names)
 
     return dataframes
 
-def join(dataframes: dict, kind='inner'):
+def join(dataframes: dict, kind='inner', collapse_duplicates=True):
     """Join the dataframes on common indices/columns
 
     Args:
@@ -163,6 +198,18 @@ def join(dataframes: dict, kind='inner'):
         else:
             # Specify suffixes to avoid overlapping column names
             df = df.join(dataframes['molecules'], how=kind, on='CID', lsuffix='_stimuli', rsuffix='_molecules')
+
+            if collapse_duplicates:
+                columns_to_drop = []
+                for col in df.columns:
+                    if col.endswith("_molecules"):
+                        base_col = col.replace("_molecules", "")
+                        if f"{base_col}_stimuli" in df.columns:
+                            # Keep the stimuli column, drop the molecules column
+                            columns_to_drop.append(col)
+                df = df.drop(columns=columns_to_drop)
+                # Rename the stimuli columns to remove the suffix
+                df.columns = [col.replace("_stimuli", "") for col in df.columns]
     return df
 
 def get_join(archive_name: str,
@@ -170,7 +217,8 @@ def get_join(archive_name: str,
              descriptor: str = "",
              remote: bool = False,
              url: str = REMOTE_URL,
-             local_path: str = LOCAL_PATH):
+             local_path: str = LOCAL_PATH,
+             shortcut_names:bool=True):
     """
     Fetches and joins data from a specified Pyrfume-Data archive.
 
@@ -188,11 +236,10 @@ def get_join(archive_name: str,
     Returns:
         pd.DataFrame: Joined dataframe.
     """
-    data = load(archive_name, types, descriptor, remote, url, local_path)
+    data = load(archive_name, types, descriptor, remote, url, local_path, shortcut_names)
     return join(data)
 
 if __name__ == "__main__":
     # Demonstration
-    data = load("leffingwell", types=["behavior", "stimuli", 'molecules'])
-    df = join(data)
+    df = get_join("leffingwell", types=["behavior", "stimuli", 'molecules'])
     print(df.head())
