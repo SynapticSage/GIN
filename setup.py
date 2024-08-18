@@ -13,6 +13,8 @@ setup(
 
     # List of dependencies
     install_requires=[
+        "python-dotenv",
+        "pyrfume",
         # Visualization dependencies
         'seaborn',
         'matplotlib',
@@ -73,4 +75,3 @@ setup(
         ],
     },
 )
-

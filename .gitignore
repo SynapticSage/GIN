@@ -14,3 +14,7 @@ gin.egg-info
 __pycache__
 notebook/.ipynb_checkpoints
 *.bak*
+runs/
+figures
+notebook/Pyrfume_Floral.*.ipynb
+.env
