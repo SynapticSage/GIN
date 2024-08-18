@@ -42,6 +42,21 @@
 import importlib
 import os
 import shutil
+import argparse
+
+parser = argparse.ArgumentParser(
+    description='Predict the presence of a specific odor descriptor.')
+parser.add_argument('--archive', 
+                    type=str, 
+                    default='leffingwell',
+                    help='Name of the Pyrfume data archive to use.')
+parser.add_argument('--descriptor', 
+                    type=str, 
+                    default='floral',
+                    help='The odor descriptor to predict.')
+args = parser.parse_args()
+desc = args.descriptor
+
 
 # Check if the `gin` package is installed
 module_spec = importlib.util.find_spec('gin')
@@ -79,6 +94,14 @@ import matplotlib.pyplot as plt
 # import seaborn as sns
 plt.rcParams['figure.dpi'] = 150
 
+# Save the figure
+figure_dir = os.path.join(os.path.dirname(gin.__file__), 'figures', args.descriptor)
+os.makedirs(figure_dir, exist_ok=True)  # Create the directory if it doesn't exist
+figure_path = (lambda x="": 
+                    os.path.join(figure_dir, f'{plt.gcf().get_suptitle() if not
+                                             x else x}.png'))
+save_fig = lambda x="": plt.savefig(figure_path(x))
+
 # + [markdown] id="d538e6fc"
 # # Dataset
 #
@@ -87,7 +110,10 @@ plt.rcParams['figure.dpi'] = 150
 # The [SMILES strings](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system) representing the molecular structures and their corresponding binary labels are provided.
 
 # + id="264e66a1"
-data_df = gin.data.pyrfume.read_local_csv()
+# Load the data
+data_df = gin.data.pyrfume.get_join(args.archive, 
+                                    types=["behavior", "molecules", "stimuli"])
+data_df = pd.DataFrame(data_df.set_index('SMILES')[desc])
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 455} id="314b5dc3-e331-4555-8184-739d0b2f684f" outputId="d64681f6-2985-40f1-f2b0-5902d747b84f"
 data_df
@@ -97,7 +123,7 @@ data_df
 # Now that we have the data loaded, what should we learn about this dataset?
 
 # + colab={"base_uri": "https://localhost:8080/"} id="9e91f4ee" outputId="676dd13a-287f-4809-8f5e-4e624d7baa34"
-data_df['floral'].isnull().sum()
+data_df[desc].isnull().sum()
 
 # + [markdown] id="2fd33ec1"
 #
@@ -106,20 +132,23 @@ data_df['floral'].isnull().sum()
 # Let's see the distribution of the labels in the dataset.
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 546} id="714f0c21" outputId="93543d52-12f6-4dfb-a811-ee1232cb13a1"
-gin.explore.pyrfume.plot_floral_distribution(data_df, kind='pie')
+gin.explore.pyrfume.plot_desc_distribution(data_df, kind='pie', descriptor=desc)
+save_fig(f'{desc}_distribution')
 
 # + [markdown] id="d9d9222f"
 # 👆 The large majority of the dataset is non-floral ❌💐. We should consider **class imbalance** downstream.
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 576} id="937701be" outputId="f85045b4-86c4-4187-89cf-ebbfa0a6d148"
 # Let's visualize some of the molecular structures in the dataset and see if we can spot any patterns.
-gin.explore.pyrfume.plot_molecular_structures_w_label(data_df, num_samples=20)
+gin.explore.pyrfume.plot_molecular_structures_w_label(data_df, num_samples=20, descriptor=desc)
+save_fig(f'{desc}_molecular_structures_1')
 
 # + [markdown] id="2059e7bf"
 # And let's examine a few more samples.
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 576} id="1caefc10" outputId="cb27d07c-46e1-45c9-c6b4-73a9c855bf77"
-gin.explore.pyrfume.plot_molecular_structures_w_label(data_df, num_samples=20)
+gin.explore.pyrfume.plot_molecular_structures_w_label(data_df, num_samples=20, descriptor=desc)
+save_fig(f'{desc}_molecular_structures_2')
 
 # + [markdown] id="3b8a8363"
 # ## Hypotheses
@@ -157,6 +186,7 @@ label_encoder = OrdinalEncoder()
 x = label_encoder.fit_transform(x)
 y = data_df['floral'].values
 gin.explore.pyrfume.plot_feature_heatmap(x)
+save_fig(f'{desc}_feature_heatmap')
 
 # + [markdown] id="604a9a65"
 # Having noticed the above, we should maybe be thinking about the following
@@ -212,6 +242,7 @@ print("----------------")
 suptitle = 'Random Forest'
 gin.validate.evaluate_model(y_test, rf_y_pred)
 gin.validate.plot_confusion_matrix(y_test, rf_y_pred, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_rf')
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 766} id="1f576b60" outputId="245b2701-1c5f-4618-8969-6ec731bc10d1"
 print("----------------")
@@ -220,6 +251,7 @@ print("----------------")
 suptitle = 'Random Forest - Resampled'
 gin.validate.evaluate_model(y_test, rf_y_pred_res2uns)
 gin.validate.plot_confusion_matrix(y_test, rf_y_pred_res2uns, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_rf_resampled')
 
 # + colab={"base_uri": "https://localhost:8080/"} id="a4f07b95" outputId="e4411c03-a672-463b-f072-9152bb24142a"
 start_time = time.time()
@@ -251,6 +283,7 @@ print("----------------")
 suptitle = "Ensemble"
 gin.validate.evaluate_model(y_test, eclf_y_pred)
 gin.validate.plot_confusion_matrix(y_test, eclf_y_pred, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_ensemble')
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 766} id="c3c0307b" outputId="010dd927-72a9-4477-924e-1499e6556a8a"
 print("----------------")
@@ -259,6 +292,7 @@ print("----------------")
 suptitle = "Ensemble - Resampled"
 gin.validate.evaluate_model(y_test, eclf_y_pred_res2uns)
 gin.validate.plot_confusion_matrix(y_test, eclf_y_pred_res2uns, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_ensemble_resampled')
 
 # + [markdown] id="4c7cf486"
 # By default random forest sets a default, but perhaps that's not ideal. We have a great deal of choice for type I type II error, and situationally these change.
@@ -274,7 +308,9 @@ results_df_res = gin.validate.evaluate_thresholds(model_res, X_test,
 results_df = gin.validate.evaluate_thresholds(model, X_test, y_test,
                                               thresholds)
 gin.validate.plot_threshold_results(results_df_res, model_name='Random Forest', suptitle='Random Forest - Resampled')
+save_fig(f'{desc}_threshold_results_rf_resampled')
 gin.validate.plot_threshold_results(results_df, model_name='Random Forest', suptitle='Random Forest')
+save_fig(f'{desc}_threshold_results_rf')
 
 # + [markdown] id="d1a0230f"
 # ## Conclusion
@@ -329,6 +365,7 @@ print("----------------")
 suptitle = 'MLP'
 gin.validate.evaluate_model(y_test, mlp_y_pred>0.5)
 gin.validate.plot_confusion_matrix(y_test, mlp_y_pred>0.5, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_mlp')
 
 print("----------------")
 print("MLP - Resampled")
@@ -336,6 +373,7 @@ print("----------------")
 suptitle = 'MLP - Resampled'
 gin.validate.evaluate_model(y_test, mlp_y_pred_res2uns > 0.5)
 gin.validate.plot_confusion_matrix(y_test, mlp_y_pred_res2uns>0.5, suptitle=suptitle)
+save_fig(f'{desc}_confusion_matrix_mlp_resampled')
 
 # + [markdown] id="57d225e2"
 # Let's also try to examine the threshold for the MLP's final sigmoid output.
@@ -352,7 +390,9 @@ results_df_mlp_res = gin.validate.evaluate_thresholds(model_res,
                                                       thresholds,
                                                       y_proba=mlp_y_pred_res)
 gin.validate.plot_threshold_results(results_df_mlp, model_name='MLP', suptitle='MLP')
+save_fig(f'{desc}_threshold_results_mlp')
 gin.validate.plot_threshold_results(results_df_mlp_res, model_name='MLP - Resampled', suptitle='MLP - Resampled')
+save_fig(f'{desc}_threshold_results_mlp_resampled')
 
 # + [markdown] id="5b528b92"
 # ## Conclusions
@@ -430,6 +470,7 @@ all_preds = np.array(all_preds)
 all_labels = np.array(all_labels)
 gin.validate.evaluate_model(all_labels, all_preds > 0.5)
 gin.validate.plot_confusion_matrix(all_labels, all_preds > 0.5, suptitle='GNN Model')
+save_fig(f'{desc}_confusion_matrix_gnn')
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 895} id="a9e26046-26f5-4c6d-889f-43b8f8615b28" outputId="52a299a7-e1fd-4319-cb29-cc77f5316920"
 from gin.extra.validate import evaluate_thresholds_gnn
@@ -439,6 +480,7 @@ results
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 573} id="e059722a-11e8-4210-9b03-3f9d232d2c5f" outputId="5bb94d78-67b2-45e8-d85e-4dca2b573fbb"
 gin.validate.plot_threshold_results(results, model_name="GNN")
+save_fig(f'{desc}_threshold_results_gnn')
 
 # + [markdown] id="5b528b92"
 # ## Conclusions

@@ -6,6 +6,11 @@ from torch_geometric.nn import global_mean_pool
 # from torch_scatter import scatter_mean
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
+import gin
+
+LOG_DIR = os.path.join(gin.__path__[0], 'logs')
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 class MessagePassingLayer(nn.Module):
     def __init__(self, node_dim, edge_dim):
@@ -64,8 +69,13 @@ def calculate_class_weights(data_list):
     class_weights = 1.0 / class_counts.float()
     return class_weights
 
-def train_gnn_model(data_list, num_epochs=100, batch_size=1024, learning_rate=0.001, 
-                    model=None):
+def train_gnn_model(data_list, 
+                    num_epochs=100, 
+                    batch_size=1024,
+                    learning_rate=0.001, 
+                    model=None,
+                    log_dir='$LOG_DIR'):
+    log_dir = log_dir.replace('$LOG_DIR', LOG_DIR)
     # Setup TensorBoard
     writer = SummaryWriter()
 
