@@ -21,7 +21,7 @@
 # # Molecular Scent Analysis
 # Hi!
 #
-# Welcome to this exploratory analysis notebook where we aim to predict whether a molecule might smell like a flower.
+# Welcome to this exploratory analysis notebook where we aim to predict whether a molecule might smell like a flower
 #
 # This notebook's goal is to demonstrate an approach to solving a problem related to molecular scent prediction, with a focus on exploratory data analysis, model evaluation, and visualization of results.
 #
@@ -56,6 +56,10 @@ parser.add_argument('--descriptor',
                     help='The odor descriptor to predict.')
 args = parser.parse_args()
 desc = args.descriptor
+
+print(" ------  ARGS -------- ")
+print(args)
+print(" --------------------- ")
 
 
 # Check if the `gin` package is installed
@@ -95,7 +99,8 @@ import matplotlib.pyplot as plt
 plt.rcParams['figure.dpi'] = 150
 
 # Save the figure
-figure_dir = os.path.join(os.path.dirname(gin.__file__), 'figures', args.descriptor)
+figure_dir = os.path.join(os.path.dirname(gin.__file__), '..', 'figures', args.descriptor)
+print("Figure directory:", figure_dir)
 os.makedirs(figure_dir, exist_ok=True)  # Create the directory if it doesn't exist
 figure_path = (lambda x="": 
                     os.path.join(figure_dir, f'{plt.gcf().get_suptitle() if not

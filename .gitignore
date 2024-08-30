@@ -18,3 +18,4 @@ runs/
 figures
 notebook/Pyrfume_Floral.*.ipynb
 .env
+outputs
