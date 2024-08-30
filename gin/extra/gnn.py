@@ -7,6 +7,7 @@ from torch_geometric.nn import global_mean_pool
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 import gin
+import os
 
 LOG_DIR = os.path.join(gin.__path__[0], 'logs')
 if not os.path.exists(LOG_DIR):
