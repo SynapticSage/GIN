@@ -239,6 +239,13 @@ def get_join(archive_name: str,
     data = load(archive_name, types, descriptor, remote, url, local_path, shortcut_names)
     return join(data)
 
+def list_descriptors(archive:str)->tuple:
+    """
+    This lists out all available descriptors that we might have in a dataset
+    """
+    df:pd.DataFrame = get_join(archive, types=["behavior"])
+    return tuple(df.columns)
+
 if __name__ == "__main__":
     # Demonstration
     df = get_join("leffingwell", types=["behavior", "stimuli", 'molecules'])
