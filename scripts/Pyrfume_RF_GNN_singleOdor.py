@@ -43,6 +43,7 @@ import importlib
 import os
 import shutil
 import argparse
+import datetime
 
 parser = argparse.ArgumentParser(
     description='Predict the presence of a specific odor descriptor.')
@@ -105,7 +106,26 @@ os.makedirs(figure_dir, exist_ok=True)  # Create the directory if it doesn't exi
 figure_path = (lambda x="": 
                     os.path.join(figure_dir, f'{plt.gcf().get_suptitle() if not
                                              x else x}.png'))
+df_path = os.path.join(figure_dir, "..", "df.csv") # WARNING: in the face of more analyses, may have to split this dataframe
 save_fig = lambda x="": plt.savefig(figure_path(x))
+df_out = pd.DataFrame(
+    {"script", [],
+     "archive", [],
+     "descriptor", [],
+     "key", [],
+     "value", [],
+     "date", []
+     }
+
+df_add = lambda key,value: df_out.append({
+    "script":"Pyrfume_RF_GNN_singleOdor",
+    "archive": args.archive,
+    "descriptor":args.descriptor,
+    "key":key,
+    "value":value,
+    "date": str(datetime.datetime.now()),
+    }) # TODO: udpate this such that we use a dict(args).copy().update() -- more robust to future updates
+
 
 # + [markdown] id="d538e6fc"
 # # Dataset
@@ -219,7 +239,12 @@ X_test_res, y_test_res = smote.fit_resample(X_test, y_test)
 
 # + id="6b56123a"
 # What hyper-parameter should we use?
-best_params = {'bootstrap': False, 'max_depth': None, 'max_features': 'log2', 'min_samples_leaf': 1, 'min_samples_split': 5, 'n_estimators': 300}
+best_params = {'bootstrap': False, 
+               'max_depth': None, 
+               'max_features': 'log2', 
+               'min_samples_leaf': 1, 
+               'min_samples_split': 5, 
+               'n_estimators': 300} # WARNING: tuned on Floral molecules -- may not apply to others
 
 model = sklearn_ensemble.RandomForestClassifier(**best_params)
 model_res = sklearn_ensemble.RandomForestClassifier(**best_params)
