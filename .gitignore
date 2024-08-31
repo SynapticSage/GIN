@@ -19,3 +19,4 @@ figures
 notebook/Pyrfume_Floral.*.ipynb
 .env
 outputs
+mlruns/0

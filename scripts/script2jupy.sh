@@ -1,6 +1,6 @@
 #!/bin/bash
 script_folder=$(dirname $(realpath $0))
-py_file=${2:-"./Pyrfume_Floral.py"}
+py_file=${1:-"./Pyrfume_Floral.py"}
 output_file="${py_file%.py}.ipynb"
 echo "Converting $1 to jupyter notebook at $script_folder"
 

@@ -1,92 +1,119 @@
 import pandas as pd
 import os
+import gin
 # module_folder = os.path.dirname(__file__)
 # print(module_folder)
 
-_data_default =  '~/Code/repos/SMELL/DREAM/data/'
+# _data_default =  '~/Code/repos/SMELL/DREAM/data/'
+_data_default = os.path.abspath(os.path.join(*gin.__path__, "..", "data"))
 
 def load_dragon_descriptors():
     """
-    Load Dragon Descriptors CSV file.
+    Load Dragon Descriptors CSV file: contains
+    featues of molecules
     """
-    return pd.read_csv(os.path.join(_data_default, 'Dragon_Descriptors.csv'))
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Dragon_Descriptors.csv'))
 
 def load_mixure_definitions_test_set():
     """
     Load Mixure Definitions Test Set CSV file.
+    This defines a set of chemicals in a mixture.
     """
-    return pd.read_csv(os.path.join(_data_default, 'Mixure_Definitions_Test_set.csv'))
-
-def load_leaderboard_set_submission_form():
-    """
-    Load Leaderboard Set Submission Form CSV file.
-    """
-    return pd.read_csv(os.path.join(_data_default, 'Leaderboard_set_Submission_form.csv'))
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Mixure_Definitions_Test_set.csv'))
 
 def load_synapse_metadata_manifest():
     """
     Load Synapse Metadata Manifest TSV file.
     """
-    return pd.read_csv(os.path.join(_data_default, 'Synapse_Metadata_Manifest.tsv'),
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Synapse_Metadata_Manifest.tsv'),
                        sep='\t')
-
-def load_mixure_definitions_leaderboard_set():
-    """
-    Load Mixure Definitions Leaderboard Set CSV file.
-    """
-    return pd.read_csv(os.path.join(_data_default, 'Mixure_Definitions_Leaderboard_set.csv'))
 
 def load_test_set_submission_form():
     """
     Load Test Set Submission Form CSV file.
     """
-    return pd.read_csv(os.path.join(_data_default, 'Test_set_Submission_form.csv'))
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Test_set_Submission_form.csv'))
 
 def load_mixure_definitions_training_set():
     """
     Load Mixure Definitions Training Set CSV file.
+
+    These define the chemical components inside
+    a given mixture.
     """
-    return pd.read_csv(os.path.join(_data_default, "Mixure_Definitions_Training_set.csv"))
+    return pd.read_csv(os.path.join(_data_default, 
+                                    "Mixure_Definitions_Training_set.csv"))
 
 def load_training_data_mixturedist():
     """
     Load Training Data Mixture Distribution CSV file.
+
+    This defines the distance between two
+    given mixtures measured perceptually.
     """
     return pd.read_csv(os.path.join(_data_default, 'TrainingData_mixturedist.csv'))
+
+def load_leaderboard_set_submission_form():
+    """
+    Load Leaderboard Set Submission Form CSV file.
+    """
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Leaderboard_set_Submission_form.csv'))
+
+def load_mixure_definitions_leaderboard_set():
+    """
+    Load Mixure Definitions Leaderboard Set CSV file.
+    """
+    return pd.read_csv(os.path.join(_data_default, 
+                                    'Mixure_Definitions_Leaderboard_set.csv'))
 
 
 if __name__ == '__main__':
 
     from gin.data import *
 
+    # Load Synapse Metadata Manifest`
+    synapse_metadata_manifest = load_synapse_metadata_manifest()
+    print(synapse_metadata_manifest.head())
+
     # Load Dragon Descriptors
     dragon_descriptors = load_dragon_descriptors()
     print(dragon_descriptors.head())
 
+    # Load Mixure Definitions Training Set
+    training_mixture_defs = load_mixure_definitions_training_set()
+    print(training_mixture_defs.head())
+
+    # Load Training Data Mixture Distribution
+    training_mixture_dists = load_training_data_mixturedist()
+    print(training_mixture_dists.head())
+
     # Load Mixure Definitions Test Set
-    mixure_definitions_test_set = load_mixure_definitions_test_set()
-    print(mixure_definitions_test_set.head())
+    test_mixture_defs = load_mixure_definitions_test_set()
+    print(test_mixture_defs.head())
+
+    # Load Test Set Submission Form
+    test_submissions_dists = load_test_set_submission_form()
+    print(test_submissions_dists.head())
 
     # Load Leaderboard Set Submission Form
     leaderboard_set_submission_form = load_leaderboard_set_submission_form()
     print(leaderboard_set_submission_form.head())
 
-    # Load Synapse Metadata Manifest
-    synapse_metadata_manifest = load_synapse_metadata_manifest()
-    print(synapse_metadata_manifest.head())
-
     # Load Mixure Definitions Leaderboard Set
     mixure_definitions_leaderboard_set = load_mixure_definitions_leaderboard_set()
     print(mixure_definitions_leaderboard_set.head())
 
-    # Load Test Set Submission Form
-    test_set_submission_form = load_test_set_submission_form()
-    print(test_set_submission_form.head())
+    print("Following include features of the molecules")
+    print("Dragon descriptor colums",   " ".join(dragon_descriptors.columns))
 
-    # Load Mixure Definitions Training Set
-    mixure_definitions_training_set = load_mixure_definitions_training_set()
-    print(mixure_definitions_training_set.head())
+    print("Mixture definition defines what is in a mixture")
+    print("Mixture definitions colums", " ".join(test_mixture_defs.columns))
 
-    # Load Training Data Mixture Distribution
-    training_data_mixturedist = load_training_data_mixturedist()
-    print(training_data_mixturedist.head())
+    print("Mixture distribution defines the distance measured between two mixtures.")
+    print("Mixture distribution colums", " ".join(training_mixture_dists.columns))
+

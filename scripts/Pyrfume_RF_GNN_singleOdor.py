@@ -39,11 +39,21 @@
 #
 # The "fine-grained" `access_token` token below grants permission to pull the private repo.
 # + colab={"base_uri": "https://localhost:8080/"} id="030e98c5-f7f4-4811-98a0-fc97b9cc0ce3" outputId="c5032aab-8eeb-422a-e2cf-f23660c85260"
+#  # Imports and Argparse
 import importlib
 import os
 import shutil
 import argparse
 import datetime
+import matplotlib.pyplot as plt
+
+import gin
+
+import numpy as np
+import torch
+from sklearn import ensemble as sklearn_ensemble
+from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
 
 parser = argparse.ArgumentParser(
     description='Predict the presence of a specific odor descriptor.')
@@ -57,11 +67,40 @@ parser.add_argument('--descriptor',
                     help='The odor descriptor to predict.')
 args = parser.parse_args()
 desc = args.descriptor
+args.script = "Pyrfume_RF_GNN_singleOdor.py"
 
 print(" ------  ARGS -------- ")
 print(args)
 print(" --------------------- ")
 
+# import seaborn as sns
+plt.rcParams['figure.dpi'] = 150
+
+# Save the figure
+figure_dir = os.path.join(os.path.dirname(gin.__file__), '..', 'figures', args.descriptor)
+print("Figure directory:", figure_dir)
+os.makedirs(figure_dir, exist_ok=True)  # Create the directory if it doesn't exist
+figure_path = (lambda x="": 
+                os.path.join(figure_dir, f'{plt.gcf().get_suptitle() if not
+                                 x else x}.png'))
+df_path = os.path.join(figure_dir, "..", "df.csv") # WARNING: in the face of more analyses, may have to split this dataframe
+save_fig = lambda x="": plt.savefig(figure_path(x))
+
+
+# + [markdown] # SETUP 
+## MLFLOW
+# This section sets up experiment tracking
+
+from gin.log.mlflow import start_run, log_params, log_metrics, log_artifacts, end_run
+
+start_run(run_name="Pyrfume_RF_GNN_singleOdor")
+
+# Log model parameters and metrics
+log_params(args.__dict__)
+# log_metrics({"metric1": score1, "metric2": score2}) # example of how would log this
+
+# + [markdown]
+# ## Clear
 
 # Check if the `gin` package is installed
 module_spec = importlib.util.find_spec('gin')
@@ -84,55 +123,14 @@ if module_spec and refresh:
 os.chdir(os.path.dirname(os.path.dirname(module_spec.origin)))
 os.getcwd()
 
-# + id="fa70a528-888d-41b6-af4a-b8f0b1f2206e"
-# %matplotlib inline
-
-import gin
-
-import numpy as np
-import torch
-from sklearn import ensemble as sklearn_ensemble
-from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import SMOTE
-
-import matplotlib.pyplot as plt
-# import seaborn as sns
-plt.rcParams['figure.dpi'] = 150
-
-# Save the figure
-figure_dir = os.path.join(os.path.dirname(gin.__file__), '..', 'figures', args.descriptor)
-print("Figure directory:", figure_dir)
-os.makedirs(figure_dir, exist_ok=True)  # Create the directory if it doesn't exist
-figure_path = (lambda x="": 
-                    os.path.join(figure_dir, f'{plt.gcf().get_suptitle() if not
-                                             x else x}.png'))
-df_path = os.path.join(figure_dir, "..", "df.csv") # WARNING: in the face of more analyses, may have to split this dataframe
-save_fig = lambda x="": plt.savefig(figure_path(x))
-df_out = pd.DataFrame(
-    {"script", [],
-     "archive", [],
-     "descriptor", [],
-     "key", [],
-     "value", [],
-     "date", []
-     }
-
-df_add = lambda key,value: df_out.append({
-    "script":"Pyrfume_RF_GNN_singleOdor",
-    "archive": args.archive,
-    "descriptor":args.descriptor,
-    "key":key,
-    "value":value,
-    "date": str(datetime.datetime.now()),
-    }) # TODO: udpate this such that we use a dict(args).copy().update() -- more robust to future updates
-
-
 # + [markdown] id="d538e6fc"
 # # Dataset
 #
 # Here we will use data managed by [the Pyrfume project](https://pyrfume.org/) 
 #
-# The [SMILES strings](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system) representing the molecular structures and their corresponding binary labels are provided.
+# The 
+# [SMILES strings](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system) 
+# representing the molecular structures and their corresponding binary labels are provided.
 
 # + id="264e66a1"
 # Load the data
@@ -159,6 +157,7 @@ data_df[desc].isnull().sum()
 # + colab={"base_uri": "https://localhost:8080/", "height": 546} id="714f0c21" outputId="93543d52-12f6-4dfb-a811-ee1232cb13a1"
 gin.explore.pyrfume.plot_desc_distribution(data_df, kind='pie', descriptor=desc)
 save_fig(f'{desc}_distribution')
+log_metrics({"class_distribution": data_df[desc].value_counts().to_dict()})
 
 # + [markdown] id="d9d9222f"
 # 👆 The large majority of the dataset is non-floral ❌💐. We should consider **class imbalance** downstream.
@@ -201,6 +200,7 @@ def featurize_smiles(smiles_str: str,
     raise ValueError(f"Invalid method: {method}")
   return fingerprint
 
+# Test the function
 featurize_smiles('CC(C)CC(C)(O)C1CCCS1')
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 392} id="6c58eeaa" outputId="8fb58cc9-43f7-4c79-efab-250dcb1f04b6"
@@ -246,6 +246,8 @@ best_params = {'bootstrap': False,
                'min_samples_split': 5, 
                'n_estimators': 300} # WARNING: tuned on Floral molecules -- may not apply to others
 
+log_params({'rf_' + key:value for key,value in best_params.items()})
+
 model = sklearn_ensemble.RandomForestClassifier(**best_params)
 model_res = sklearn_ensemble.RandomForestClassifier(**best_params)
 
@@ -273,6 +275,7 @@ suptitle = 'Random Forest'
 gin.validate.evaluate_model(y_test, rf_y_pred)
 gin.validate.plot_confusion_matrix(y_test, rf_y_pred, suptitle=suptitle)
 save_fig(f'{desc}_confusion_matrix_rf')
+log_metrics(gin.validate.get_metrics(y_test, rf_y_pred))
 
 # + colab={"base_uri": "https://localhost:8080/", "height": 766} id="1f576b60" outputId="245b2701-1c5f-4618-8969-6ec731bc10d1"
 print("----------------")
