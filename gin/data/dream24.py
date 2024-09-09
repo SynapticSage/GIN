@@ -73,47 +73,53 @@ def load_mixure_definitions_leaderboard_set():
 
 
 if __name__ == '__main__':
-
     from gin.data import *
 
-    # Load Synapse Metadata Manifest`
-    synapse_metadata_manifest = load_synapse_metadata_manifest()
-    print(synapse_metadata_manifest.head())
+    # Load all datasets
+    d = datasets = {
+        'synapse_metadata': load_synapse_metadata_manifest(),
+        'dragon_descriptors': load_dragon_descriptors(),
+        'training_mixture_defs': load_mixure_definitions_training_set(),
+        'training_mixture_dists': load_training_data_mixturedist(),
+        'test_mixture_defs': load_mixure_definitions_test_set(),
+        'test_submissions_dists': load_test_set_submission_form(),
+        'leaderboard_submissions': load_leaderboard_set_submission_form(),
+        'leaderboard_mixture_defs': load_mixure_definitions_leaderboard_set()
+    }
 
-    # Load Dragon Descriptors
-    dragon_descriptors = load_dragon_descriptors()
-    print(dragon_descriptors.head())
+    def join_datasets(dataframes, kind='inner'):
+        """Join the dataframes on common indices/columns"""
+        df = None
+        for name, dataframe in dataframes.items():
+            if df is None:
+                df = dataframe
+            else:
+                df = df.merge(dataframe, how=kind, left_index=True, right_index=True, suffixes=(f'_{name}', ''))
+        return df
 
-    # Load Mixure Definitions Training Set
-    training_mixture_defs = load_mixure_definitions_training_set()
-    print(training_mixture_defs.head())
+    # Print head of each dataset
+    for name, df in datasets.items():
+        print(f"\n{name.replace('_', ' ').title()}:")
+        print(df.head())
 
-    # Load Training Data Mixture Distribution
-    training_mixture_dists = load_training_data_mixturedist()
-    print(training_mixture_dists.head())
+    merged_data_1 = pd.merge(d['training_mixture_defs'], 
+                             d['dragon_descriptors'], on='CID', how='left')
 
-    # Load Mixure Definitions Test Set
-    test_mixture_defs = load_mixure_definitions_test_set()
-    print(test_mixture_defs.head())
+    # Map mixture labels to corresponding CIDs
+    # mix_1 = datasets['training_mixture_dists']['Mixture 1'].map(merged_data_1.set_index('Mixture Label')['CID'])
+    # mix_2 = datasets['training_mixture_dists']['Mixture 2'].map(merged_data_1.set_index('Mixture Label')['CID'])
+    #
+    # # Merge with distances
+    # merged_data_2 = datasets['training_mixture_dists'].copy()
+    # merged_data_2['Mixture 1 CID'] = mix_1
+    # merged_data_2['Mixture 2 CID'] = mix_2
+    #
+    # final_merged_data = pd.merge(merged_data_2, merged_data_1, left_on='Mixture 1 CID', right_on='CID', how='left')
+    # final_merged_data = pd.merge(final_merged_data, merged_data_1, left_on='Mixture 2 CID', right_on='CID', how='left', suffixes=('_1', '_2'))
 
-    # Load Test Set Submission Form
-    test_submissions_dists = load_test_set_submission_form()
-    print(test_submissions_dists.head())
-
-    # Load Leaderboard Set Submission Form
-    leaderboard_set_submission_form = load_leaderboard_set_submission_form()
-    print(leaderboard_set_submission_form.head())
-
-    # Load Mixure Definitions Leaderboard Set
-    mixure_definitions_leaderboard_set = load_mixure_definitions_leaderboard_set()
-    print(mixure_definitions_leaderboard_set.head())
-
-    print("Following include features of the molecules")
-    print("Dragon descriptor colums",   " ".join(dragon_descriptors.columns))
-
-    print("Mixture definition defines what is in a mixture")
-    print("Mixture definitions colums", " ".join(test_mixture_defs.columns))
-
-    print("Mixture distribution defines the distance measured between two mixtures.")
-    print("Mixture distribution colums", " ".join(training_mixture_dists.columns))
-
+    """
+    _defs define the chemical components inside a given mixture, where each cid in a row is a component
+          sorted by highest to lowest concentration
+    _dists define the distance between two given mixtures measured perceptually
+    _dragon_descriptors define the features of molecules
+    """

@@ -9,14 +9,30 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc
 
 from typing import Tuple
 
-def evaluate_model(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray|None = None):
+def get_metrics(y_true: np.ndarray, y_pred: np.ndarray, 
+                y_prob: np.ndarray|None = None)->dict:
     """Evaluate the model performance and print metrics."""
-    print("Accuracy:", metrics.accuracy_score(y_true, y_pred))
-    print("Precision:", metrics.precision_score(y_true, y_pred))
-    print("Recall:", metrics.recall_score(y_true, y_pred))
-    print("F1 Score:", metrics.f1_score(y_true, y_pred))
-    print("F1 Score0:", metrics.f1_score(y_true, y_pred, pos_label=0))
-    print("AUC-ROC Score:", metrics.roc_auc_score(y_true, y_prob) if y_prob is not None else "N/A")
+    met = {
+        "Accuracy": metrics.accuracy_score(y_true, y_pred),
+        "Precision": metrics.precision_score(y_true, y_pred),
+        "Recall": metrics.recall_score(y_true, y_pred),
+        "F1 Score": metrics.f1_score(y_true, y_pred),
+        "F1 Score0": metrics.f1_score(y_true, y_pred, pos_label=0),
+        "AUC-ROC Score": metrics.roc_auc_score(y_true, y_prob) if
+        y_prob is not None else -np.inf
+    }
+    return met
+
+def evaluate_model(y_true: np.ndarray, y_pred: np.ndarray, y_prob:
+                   np.ndarray|None = None)->dict:
+    met = get_metrics(y_true, y_pred, y_prob)
+    print("Accuracy:", met["AUC-ROC Score"])
+    print("Precision:", met["Precision"])
+    print("Recall:", met["Recall"])
+    print("F1 Score:", met["F1 Score"])
+    print("F1 Score0:", met["F1 Score0"])
+    print("AUC-ROC Score:", met["AUC-ROC Score"])
+    return met
 
 def plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, labels: list = ['Non-floral', 'Floral'], suptitle=''):
     """Plot the confusion matrix."""

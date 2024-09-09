@@ -20,3 +20,6 @@ notebook/Pyrfume_Floral.*.ipynb
 .env
 outputs
 mlruns/0
+.mind
+gin/log/philosophy.md
+mlruns
