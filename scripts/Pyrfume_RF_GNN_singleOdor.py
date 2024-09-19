@@ -46,6 +46,7 @@ import shutil
 import argparse
 import datetime
 import matplotlib.pyplot as plt
+plt.ion()
 
 import gin
 
@@ -110,6 +111,13 @@ print("Experiment name:", )
 print("Run name:", run_name)
 print("-"*50)
 
+
+def mlflow_annotate(kws:dict):
+    kws.update(args.__dict__)
+    mlflow.log_params(kws)
+    mlflow.set_tag("stimuli_multi_or_single", "single")
+    mlflow.set_tag("odorant_type", "pure_odorant")
+
 # Set the MLflow experiment
 mlflow.set_experiment(exp_name)
 assert(not mlflow.active_run())
@@ -124,8 +132,6 @@ assert(not mlflow.active_run())
 # + id="load_data"
 # Load the data
 mlflow.start_run(run_name="exploration")
-mlflow.set_tag("stimuli_multi_or_single", "single")
-mlflow.set_tag("odorant_type", "pure_odorant")
 data_df = gin.data.pyrfume.get_join(args.archive, 
                                     types=["behavior", "molecules", "stimuli"])
 data_df = pd.DataFrame(data_df.set_index('SMILES')[desc])
@@ -235,6 +241,7 @@ X_test_res, y_test_res = smote.fit_resample(X_test, y_test)
 # + id="train_rf"
 # Start a parent run for the RandomForest models
 mlflow.start_run(run_name="RandomForest_parent")
+mlflow_annotate({"model_type": "RandomForest"})
 
 # What hyper-parameters should we use?
 best_params = {'bootstrap': False, 
@@ -252,6 +259,7 @@ model_res = sklearn_ensemble.RandomForestClassifier(**best_params)
 # + id="rf_model_1"
 # Start a child run for the first RandomForest model
 mlflow.start_run(run_name="RandomForest_model_1", nested=True)
+mlflow_annotate({"model_type": "RandomForest", "model_version": "v1"})
 
 # Fit and predict
 rf_y_pred = model.fit(X_train, y_train).predict(X_test)
@@ -285,6 +293,7 @@ mlflow.end_run()
 # + id="rf_model_resampled"
 # Start a child run for the RandomForest model with resampled data
 mlflow.start_run(run_name="RandomForest_model_resampled", nested=True)
+mlflow_annotate({"model_type": "RandomForest", "model_version": "v1"})
 
 # Fit and predict
 rf_y_pred_res = model_res.fit(X_train_res, y_train_res).predict(X_test_res)
@@ -316,6 +325,7 @@ mlflow.end_run()
 # + id="ensemble"
 # Start a parent run for Ensemble models
 mlflow.start_run(run_name="Ensemble_parent")
+mlflow_annotate({"model_type": "Ensemble", "model_version": "v1"})
 
 # Define classifiers
 from sklearn.linear_model import LogisticRegression
@@ -324,12 +334,14 @@ clf2 = sklearn_ensemble.RandomForestClassifier(**best_params)
 clf3 = sklearn_ensemble.GradientBoostingClassifier()
 
 # VotingClassifier with hard voting
-model_vote = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
-model_vote_res = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='hard')
+# VotingClassifier with soft voting
+model_vote = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='soft')
+model_vote_res = sklearn_ensemble.VotingClassifier(estimators=[('lr', clf1), ('rf', clf2), ('gb', clf3)], voting='soft')
 
 # + id="ensemble_model_1"
 # Start a child run for the ensemble model
 mlflow.start_run(run_name="Ensemble_model_1", nested=True)
+mlflow_annotate({"model_type": "Ensemble", "model_version": "v1"})
 
 # Fit and predict
 model_vote.fit(X_train, y_train)
@@ -349,6 +361,7 @@ mlflow.end_run()
 # + id="ensemble_model_resampled"
 # Start a child run for the ensemble model with resampled data
 mlflow.start_run(run_name="Ensemble_model_resampled", nested=True)
+mlflow_annotate({"model_type": "Ensemble", "model_version": "v1"})
 
 # Fit and predict
 model_vote_res.fit(X_train_res, y_train_res)
@@ -364,10 +377,17 @@ save_fig(f'{desc}_confusion_matrix_ensemble_resampled')
 
 # + id="ensemble_thresholds"
 # Evaluate thresholds for Ensemble models
-results_df_ensemble_res = gin.validate.evaluate_thresholds(model_vote_res, X_test, y_test, thresholds)
-mlflow.log_params({'thresholds': thresholds})
-mlflow.log_table(results_df_ensemble_res,
-    "threshold/threshold_results_ensemble_resampled.json")
+# Evaluate thresholds for Ensemble models
+if hasattr(model_vote_res, 'predict_proba'):
+    results_df_ensemble_res = gin.validate.evaluate_thresholds(model_vote_res, X_test, y_test, thresholds)
+    mlflow.log_params({'thresholds': thresholds})
+    mlflow.log_table(results_df_ensemble_res,
+        "threshold/threshold_results_ensemble_resampled.json")
+
+    gin.validate.plot_threshold_results(results_df_ensemble_res, model_name='Ensemble - Resampled', suptitle='Ensemble - Resampled')
+    save_fig(f'{desc}_threshold_results_ensemble_resampled')
+else:
+    print("Warning: predict_proba is not available for this model. Skipping threshold evaluation.")
 
 gin.validate.plot_threshold_results(results_df_ensemble_res, model_name='Ensemble - Resampled', suptitle='Ensemble - Resampled')
 save_fig(f'{desc}_threshold_results_ensemble_resampled')
@@ -387,9 +407,11 @@ mlflow.end_run()
 
 # Start a parent run for MLP models
 mlflow.start_run(run_name="MLP_parent")
+mlflow_annotate()
 
 # Start a child run for MLP model
 mlflow.start_run(run_name="MLP_model_1", nested=True)
+    mlflow_annotate({"model_type": "MLP", "model_version": "v1"})
 
 from gin.model import MLP
 model_mlp = MLP(input_dim=X_train.shape[1])
@@ -470,6 +492,7 @@ mlflow.end_run()
 # + id="gnn_setup"
 # Start a parent run for GNN models
 mlflow.start_run(run_name="GNN_parent")
+mlflow_annotate({"model_type": "GNN"})
 
 # Convert the SMILES strings to graph data and split into train/test sets
 from sklearn.model_selection import train_test_split
@@ -492,9 +515,6 @@ if len(data_list) == 0:
 
 # Split the data into training and testing sets
 train_data, test_data = train_test_split(data_list, test_size=0.2, random_state=42)
-
-# Start a child run for the GNN model
-mlflow.start_run(run_name="GNN_model_1", nested=True)
 
 # Train the GNN model on the training data
 model_gnn = train_gnn_model(train_data, num_epochs=250)
@@ -544,9 +564,6 @@ mlflow.log_table(results_gnn, "threshold/threshold_results_gnn.json")
 gin.validate.plot_threshold_results(results_gnn, model_name="GNN")
 save_fig(f'{desc}_threshold_results_gnn')
 
-# End child run
-mlflow.end_run()
-
 # End parent run for GNN
 mlflow.end_run()
 
@@ -558,3 +575,4 @@ mlflow.end_run()
 # **Better yet** -- pull a model from HuggingFace 🤗 that has been pre-trained on other molecules to leverage the knowledge seen in other data.
 #
 # # The End
+print("FINISHED!")
