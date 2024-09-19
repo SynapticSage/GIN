@@ -112,7 +112,7 @@ print("Run name:", run_name)
 print("-"*50)
 
 
-def mlflow_annotate(kws:dict):
+def mlflow_annotate(kws:dict={}):
     kws.update(args.__dict__)
     mlflow.log_params(kws)
     mlflow.set_tag("stimuli_multi_or_single", "single")
@@ -411,7 +411,7 @@ mlflow_annotate()
 
 # Start a child run for MLP model
 mlflow.start_run(run_name="MLP_model_1", nested=True)
-    mlflow_annotate({"model_type": "MLP", "model_version": "v1"})
+mlflow_annotate({"model_type": "MLP", "model_version": "v1"})
 
 from gin.model import MLP
 model_mlp = MLP(input_dim=X_train.shape[1])
